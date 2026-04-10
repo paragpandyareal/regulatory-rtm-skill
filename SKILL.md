@@ -82,6 +82,7 @@ Follow this process when the user provides a regulatory document:
 - Note the issuing authority and effective dates
 - Identify who the document applies to (which types of organisations or roles)
 - Read `references/document-types.md` for extraction tips specific to this type of document
+- **For documents over 30 pages:** You MUST follow the "Processing Large Documents" section below. Build the Document Map, then delegate extraction to parallel sub-agents. Do NOT attempt to extract requirements from a large document in a single pass — you will skim and miss obligations. This is the #1 cause of incomplete RTMs
 
 ### Step 2: Extract Requirements Systematically
 
@@ -137,6 +138,7 @@ For a comprehensive list of obligation trigger words by category and jurisdictio
 - Do NOT assume "administrative" or "procedural" clauses are unimportant
 - If a single clause contains multiple obligations, extract each one as a separate requirement with its own row
 - If you are unsure whether something is a requirement, include it and flag it with a note explaining your uncertainty
+- **For documents over 30 pages:** this extraction MUST happen via parallel sub-agents as described in "Processing Large Documents" below. Each sub-agent focuses on one thematic section with a fresh context window, which prevents the skimming and rushing that happens when one agent tries to process the entire document. The orchestrator's job during extraction is delegation and coordination, not extraction itself
 
 **After completing your extraction, do a completeness check:**
 - Count the sections/clauses in the source document
@@ -188,22 +190,151 @@ This skill is **output-format agnostic**. The analysis and structure are the sam
 
 For very large documents (50+ requirements), recommend Excel or splitting across multiple pages/documents for manageability.
 
-## Handling Large Documents
+## Processing Large Documents (30+ pages)
 
-For regulatory documents over 30 pages:
-- Process in sections rather than all at once
-- Start with a summary/overview pass, then do detailed extraction section by section
-- Group requirements logically (by section of the regulation, or by business domain)
-- For Confluence output, split into a parent page with summary and child pages by section or domain
-- For Excel, use separate worksheets for each section or domain, plus a summary worksheet
+Large regulatory documents (30+ pages) **must not** be processed in a single pass. Context pressure causes the AI to skim, rush, and silently skip sections — the exact failure mode that makes an RTM worthless. Instead, use a structured multi-agent pipeline: **Map → Extract (parallel) → Merge → Verify**.
+
+### Phase 1: Document Map (orchestrator does this)
+
+Before extracting a single requirement, the orchestrator must read the full document and produce a **Document Map**. This is a structured outline, not an extraction — it takes minutes and prevents every downstream mistake.
+
+The Document Map must contain:
+
+1. **Document metadata** — title, issuing authority, document type (legislation/amendment/rule change/standard/policy/final decision), publication date
+2. **Structure inventory** — every Part, Chapter, Division, Section, Schedule, Appendix, and Annex with page ranges. Use the table of contents if one exists, but verify it against the actual document (tables of contents are sometimes outdated or incomplete)
+3. **Definitions register** — every defined term and its definition, copied verbatim. This is critical because defined terms change the meaning of obligation clauses throughout the document. A sub-agent processing Chapter 6 cannot do its job correctly if it doesn't know that "small customer" has a specific regulatory definition from Chapter 1
+4. **Scope provisions** — who does this document apply to? Which types of organisations, roles, activities, or jurisdictions?
+5. **Effective dates** — all commencement dates, transition periods, and phased implementation schedules. If different sections commence on different dates, map each one
+6. **Section boundaries for delegation** — divide the document into extraction chunks along **natural thematic boundaries** (chapters, parts, reform topics). Never split mid-section or mid-clause. Each chunk should be a self-contained regulatory topic that a sub-agent can fully understand
+
+**Splitting rules:**
+- Split at chapter, part, or major topic boundaries — never at arbitrary page counts
+- If a chapter is very large (20+ pages with dense obligations), split at division or sub-topic boundaries within it
+- If several chapters are short and closely related (e.g., "Administrative Updates" with 3 pages), combine them into one chunk
+- Schedules, appendices, and annexes are their own chunks unless they are very short
+- The goal is chunks that are coherent regulatory topics, roughly 10-30 pages each
+
+### Phase 2: Parallel Extraction (sub-agents)
+
+Spawn one sub-agent per chunk identified in the Document Map. **All sub-agents run in parallel.** Each sub-agent receives:
+
+#### What every sub-agent MUST receive:
+
+1. **Their assigned pages/sections** — the full extracted text of their chunk, every word
+2. **The shared context preamble** — this is identical for every sub-agent and contains:
+   - Document metadata (title, authority, type, date)
+   - The complete definitions register from Phase 1
+   - Scope provisions
+   - All effective dates and transition schedules
+   - The full Document Map (so the agent knows where their chunk sits in the overall document and what other sections exist)
+3. **Their extraction assignment** — which sections they own, with explicit boundaries (e.g., "You are extracting requirements from Chapter 5: Protection for Customers Paying Higher Prices, pages 34-39. You own ONLY this section. Other agents are handling other chapters.")
+4. **Requirement ID prefix** — each sub-agent gets a unique prefix to avoid ID collisions (e.g., "CH2-REQ-001", "CH5-REQ-001"). These get renumbered in the merge phase
+5. **The full RTM field schema** — all required and recommended fields, so every sub-agent produces identically structured output
+6. **Cross-reference instructions** — "If your section references another section of this document (e.g., 'as defined in clause 3' or 'subject to Part 6'), note the cross-reference in the Dependencies field but do NOT attempt to extract requirements from the referenced section — another agent owns that section"
+
+#### Sub-agent extraction prompt template:
+
+```
+You are extracting regulatory requirements from ONE section of a larger document.
+
+DOCUMENT: [title, authority, date]
+YOUR SECTION: [section name, page range]
+YOUR ID PREFIX: [e.g., CH5-REQ]
+
+IMPORTANT CONTEXT — these apply to your section even though they come from elsewhere in the document:
+
+DEFINITIONS:
+[full definitions register]
+
+SCOPE: [who this document applies to]
+
+EFFECTIVE DATES: [all dates, especially any that apply to this section]
+
+DOCUMENT STRUCTURE (for cross-references):
+[Document Map]
+
+YOUR TASK:
+Extract EVERY requirement from your assigned section using the RTM schema below.
+You are responsible for COMPLETENESS within your section — capture every obligation,
+prohibition, permission, timeline, exception, exemption, reporting duty, and record-keeping
+requirement. Do not skip anything. Do not summarise. Copy verbatim text exactly.
+
+At the end, list every sub-section/clause in your assigned pages and confirm how many
+requirements you extracted from each. If any sub-section yielded zero requirements, explain why.
+
+RTM FIELDS:
+[full field schema]
+```
+
+#### Sub-agent output format:
+
+Each sub-agent returns:
+- A JSON array of requirement objects (one per requirement, all fields populated)
+- A coverage report listing every clause/sub-section in their chunk with the count of requirements extracted from each
+- A list of cross-references to other sections (for the merge phase to validate)
+- A list of any ambiguities or uncertainties flagged for human review
+
+### Phase 3: Merge (orchestrator does this)
+
+After all sub-agents complete, the orchestrator:
+
+1. **Collects all requirement arrays** and concatenates them
+2. **Renumbers requirement IDs** sequentially (REQ-001, REQ-002, ...) while preserving the original sub-agent IDs in a "Original ID" field for traceability
+3. **Deduplicates** — if two sub-agents extracted the same obligation from overlapping references (e.g., a cross-reference restates an obligation from another section), keep the one with more complete verbatim text and note the duplicate
+4. **Resolves cross-references** — where sub-agent A noted "depends on clause X" and sub-agent B extracted clause X as REQ-047, update the dependency to "Depends on REQ-047"
+5. **Sequences dependencies** — requirements that depend on others should appear after their dependencies where possible
+6. **Builds the coverage map** — combines all sub-agent coverage reports into a single document-wide map showing every section and its requirement count
+
+### Phase 4: Verification (review sub-agent)
+
+Spawn a **separate review sub-agent** that receives:
+- The complete merged RTM
+- The Document Map from Phase 1
+- The full document text (or at minimum, the table of contents and section headers)
+
+The review agent checks:
+
+1. **Coverage completeness** — every section in the Document Map has at least one requirement, or an explicit explanation for why it has zero
+2. **Density sanity check** — flag sections where the requirement count seems too low for the page count (e.g., a 15-page chapter with only 2 requirements is suspicious)
+3. **ID continuity** — no gaps or duplicates in the final ID sequence
+4. **Cross-reference integrity** — every dependency reference points to a valid requirement ID
+5. **Source type distribution** — flag if ASSUMED > 20% or VERBATIM < 60%
+6. **Missing obligation patterns** — scan the document for obligation trigger words ("must", "shall", "required to", "prohibited") and check that each instance maps to at least one extracted requirement
+7. **Effective date consistency** — every requirement with a timeline has an effective date that matches the implementation schedule
+
+The review agent returns a **verification report** with:
+- PASS/FAIL for each check
+- A list of specific gaps or issues found
+- Recommended additional requirements to extract (with section references)
+
+If the review agent identifies gaps, the orchestrator must either extract the missing requirements itself or spawn targeted sub-agents to fill the gaps.
+
+### Output Splitting for Confluence
+
+When outputting to Confluence pages, split along **thematic boundaries**, not page counts or requirement counts:
+
+- **Hub page** — document summary, statistics, coverage map, implementation timeline, and navigation links to child pages
+- **Child pages** — one per regulatory topic/chapter/reform area. A child page covers one coherent subject (e.g., "Automatic Best Offer Requirements", "Payment Method Access Requirements")
+- If a single topic has more than ~10 requirements (roughly 25-30KB of ADF), split it into sub-pages (e.g., "Automatic Best Offer — Eligibility & Switching", "Automatic Best Offer — Opt-Out & Exceptions")
+- Never split a requirement across two pages — each requirement row must be complete on one page
+- Each child page should have a brief context paragraph at the top explaining what this section covers and how it fits into the overall regulation
+- Page titles should be descriptive and human-readable (e.g., "ESC Energy Consumer Reforms — Ch 5: Higher Prices Protection") not generic ("RTM Page 3 of 8")
+
+### For Excel or Word output
+
+- Group by regulatory topic/chapter, not alphabetically or by requirement ID
+- Include a summary/dashboard sheet/section first
+- Each topic group should be visually separated with headers
 
 ## Important Warnings
 
 - **CAPTURE EVERYTHING.** Do not self-filter. A requirement that seems trivial to AI could be the exact clause an auditor asks about. It is always better to have a row that turns out to be low priority than a gap that turns out to be a compliance breach
+- **Never process large documents in a single pass.** For any document over 30 pages, you MUST use the parallel sub-agent pipeline described in "Processing Large Documents". Single-pass extraction of large documents is the #1 cause of incomplete RTMs. The AI skims under context pressure, silently drops sections, and produces a superficially complete but actually gap-ridden matrix. The sub-agent pattern exists specifically to prevent this — each agent gets a fresh context window focused on just their section
 - **Never invent requirements.** If it's not in the document (explicitly or by clear implication), don't include it. Flag ASSUMED entries with clear reasoning
 - **Never change verbatim text.** Copy the exact text, including any typos in the regulation
 - **Always flag uncertainty.** If you're unsure about an interpretation, say so. Add a note like "This clause is ambiguous - the interpretation above assumes X, but it could also mean Y"
 - **Cross-references matter.** If the regulation references another document you don't have, flag it as a standalone requirement. Don't guess what the referenced document says
-- **Definitions matter.** Check the definitions section and apply those definitions. If a definition creates or narrows an obligation, extract it as a requirement
+- **Definitions matter.** Check the definitions section and apply those definitions. If a definition creates or narrows an obligation, extract it as a requirement. Pass the full definitions register to every sub-agent — a defined term in Chapter 1 changes the meaning of obligation clauses in Chapter 10
 - **Exceptions are requirements too.** An exemption, carve-out, or exception needs its own row because it defines the boundaries of other obligations
-- **If the document is too large to process in one pass, tell the user.** Say which sections you've covered and which are still pending. Never silently skip sections
+- **Every sub-agent must know it has a piece, not the whole.** When delegating to sub-agents, be explicit: "You are extracting from Section X only. Other agents handle other sections. Do not attempt to cover the whole document. Focus exclusively on completeness within your assigned section."
+- **Never silently skip sections.** If any section yields zero requirements, explain why. The verification agent will flag unexplained gaps
