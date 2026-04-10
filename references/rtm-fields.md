@@ -123,23 +123,29 @@ Always err on the side of marking something as DERIVED or INTERPRETED rather tha
 
 Which part of the business this requirement applies to. Use these standard categories and add domain-specific ones as needed:
 
-**Standard domains:**
-- **Billing** - Customer billing, invoicing, payment processing
-- **Metering** - Meter data, meter installation, meter reading
-- **Customer Communications** - Notices, disclosures, customer-facing information
-- **IT Systems** - Technology platforms, data systems, cybersecurity
-- **Market Operations** - Market participation, bidding, dispatch
-- **Settlement** - Financial settlement, reconciliation
-- **Registration** - Participant registration, licensing
-- **Compliance** - Compliance reporting, monitoring, audit
-- **Legal** - Contractual obligations, dispute resolution
-- **Finance** - Financial reporting, prudential requirements
-- **Network Operations** - Grid operations, network management
-- **Data Management** - Data handling, privacy, data exchange
-- **Human Resources** - Training, qualifications, personnel requirements
-- **Governance** - Board obligations, risk management, internal controls
-- **Customer Service** - Complaints, hardship, life support
-- **Procurement** - Acquisition, contracting, vendor management
+**Generic starter domains (use these as a starting point, then add industry-specific ones as needed):**
+- **Operations** - Day-to-day business operations and processes
+- **Finance** - Financial reporting, budgeting, treasury, prudential requirements
+- **Legal** - Contractual obligations, dispute resolution, litigation
+- **Compliance** - Compliance reporting, monitoring, audit, regulatory relationships
+- **IT / Technology** - Systems, cybersecurity, data platforms, infrastructure
+- **HR / People** - Training, qualifications, personnel requirements, workplace culture
+- **Customer** - Customer service, complaints, hardship, customer-facing communications
+- **Supply Chain** - Procurement, vendor management, third-party risk
+- **Risk Management** - Enterprise risk, operational risk, risk appetite
+- **Governance** - Board obligations, committee oversight, delegation authorities, internal controls
+- **Data / Privacy** - Data handling, privacy, data exchange, records management
+- **Safety / Environment** - Workplace health and safety, environmental obligations, sustainability
+- **Communications** - Public disclosures, market announcements, stakeholder engagement
+- **Procurement** - Acquisition, contracting, tender processes
+
+**Energy sector example domains:** Billing, Metering, Market Operations, Settlement, Network Operations, Connection Services, Retail Operations, Generation, Transmission, Distribution
+
+**Financial services example domains:** Lending, Insurance, Wealth Management, Trading, Treasury, Prudential, Conduct, Anti-Money Laundering, Credit Risk, Market Risk
+
+**Healthcare example domains:** Clinical Governance, Patient Safety, Infection Control, Medicines Management, Medical Devices, Health Records, Clinical Trials, Workforce Registration
+
+**Construction example domains:** Building Compliance, Site Safety, Environmental Management, Quality Assurance, Contract Administration, Planning Approvals, Heritage, Accessibility
 
 A requirement can belong to multiple domains. List the primary domain first, then secondary ones.
 
@@ -206,6 +212,212 @@ When this requirement comes into force. Extract from the document if specified.
 
 ---
 
-## 12-17. Remaining Fields
+## 12. Responsible Party
 
-See the main SKILL.md for descriptions of Responsible Party, Dependencies, Change Type, Implementation Notes, Verification Method, and Risk if Non-Compliant. These follow the same principle of transparency and should only be populated with information that can be traced back to the source document or clearly flagged as derived/assumed.
+Who within the organisation (or which type of organisation) is responsible for compliance. If the regulation specifies this, use that. If not, make a reasonable inference and mark it as DERIVED.
+
+**Examples:**
+- `Registered Participants` (energy market term)
+- `Data Controller` (GDPR term)
+- `PCBU - Person Conducting a Business or Undertaking` (WHS term)
+- `Chief Information Security Officer`
+- `Board of Directors`
+- `All staff`
+- `Third-party processors`
+- `To be confirmed` (if you genuinely cannot determine this)
+
+A requirement can have multiple responsible parties. List the primary one first.
+
+---
+
+## 13. Dependencies
+
+Other requirements that this one depends on or is linked to. This is about sequencing: what needs to happen before this requirement can be met?
+
+**Examples:**
+- `Depends on REQ-003 (system must be built before data can be submitted)`
+- `Depends on REQ-015 (policy must be approved before training can be delivered)`
+- `No dependencies - standalone requirement`
+- `Blocked by: organisational decision on which vendor to use`
+
+---
+
+## 14. Change Type
+
+For amendments and rule changes, what kind of change this represents. For new standalone regulations, everything is NEW.
+
+| Type | Description |
+|---|---|
+| **NEW** | Brand new requirement that did not exist before |
+| **AMENDED** | Modification of an existing requirement. Note both old and new text |
+| **DELETED** | Requirement being removed. Still include it in the RTM so there is a record |
+| **UNCHANGED** | Existing requirement not affected by this change. Include for completeness if analysing an amendment alongside the existing instrument |
+
+---
+
+## 15. Implementation Notes
+
+Practical considerations for implementing this requirement. This is where you add context that helps the business team understand what they actually need to do.
+
+**Examples:**
+- `Requires changes to the billing system to calculate new tariff rates`
+- `May need legal advice on whether existing contracts satisfy this requirement`
+- `Training program needs to be developed - no off-the-shelf solution likely to cover this`
+- `This is a new reporting obligation - check if existing data collection supports the required fields`
+- `Cross-reference with existing privacy policy - may already be partially compliant`
+
+---
+
+## 16. Verification Method
+
+How compliance with this requirement would be verified. This is useful for audit preparation and compliance monitoring program design.
+
+| Method | Description | Example |
+|---|---|---|
+| **INSPECTION** | Review of documents, records, or artefacts | Checking that a policy exists and is signed |
+| **TESTING** | Active testing of systems, processes, or controls | Running a penetration test, testing a backup restore |
+| **DEMONSTRATION** | Showing that a process works in practice | Walking through the complaint handling process |
+| **ANALYSIS** | Analytical assessment of data or reports | Reviewing incident statistics against benchmarks |
+| **INTERVIEW** | Asking staff about their knowledge or practices | Checking that staff know the breach notification process |
+
+A requirement may need multiple verification methods.
+
+---
+
+## 17. Risk if Non-Compliant
+
+What happens if this requirement is not met. Be specific where the regulation specifies consequences.
+
+**Examples:**
+- `Civil penalty up to $500,000 per contravention`
+- `Licence condition - breach may trigger regulatory investigation`
+- `Customer complaint to ombudsman - potential compensation order`
+- `Safety risk - potential for serious injury or death`
+- `Regulatory direction to remediate within specified timeframe`
+- `Reputational risk - public reporting of non-compliance`
+- `No specific penalty stated but general enforcement powers apply under Section 45 of the Act`
+
+---
+
+## Advanced Fields
+
+These fields are valuable for mature compliance programs doing detailed gap analysis, audit preparation, or framework mapping. For a quick first-pass analysis, you can skip these and add them later.
+
+### 18. Control Reference
+
+Mapping to existing control frameworks the organisation may already have in place.
+
+**Examples:**
+- `ISO 27001 A.8.1` (information asset inventory)
+- `NIST CSF PR.AC-1` (identity management)
+- `CIS Control 1.1` (enterprise asset inventory)
+- `SOC 2 CC6.1` (logical access controls)
+
+Useful for gap analysis: if a new regulation maps to an existing control, the organisation may already be partially compliant.
+
+### 19. Evidence Required
+
+What documentation or artefact would demonstrate compliance if an auditor asked.
+
+**Examples:**
+- `Signed and dated policy document, reviewed within last 12 months`
+- `System logs showing encryption at rest enabled for all customer data stores`
+- `Training completion records for all staff, dated within last 12 months`
+- `Board minutes showing annual risk appetite review`
+- `Incident response test report with findings and remediation actions`
+
+### 20. Review Frequency
+
+How often compliance with this requirement needs to be reassessed.
+
+**Values:** `Continuous` (real-time monitoring), `Monthly`, `Quarterly`, `Semi-annual`, `Annual`, `Per-event` (triggered by a specific event like a breach or change), `Ad-hoc`
+
+### 21. Applicability Scope
+
+Which specific entities, products, services, or geographies this requirement applies to. More granular than Business Domain.
+
+**Examples:**
+- `All retail electricity customers in Victoria`
+- `Organisations processing personal data of EU residents`
+- `Category 1 licensees with annual revenue over $50M`
+- `All cloud-hosted production systems`
+
+### 22. Regulatory Authority
+
+Who enforces this requirement. May be different from the body that issued the document.
+
+**Examples:**
+- `Australian Energy Regulator (AER)` - enforces National Energy Retail Law
+- `Information Commissioner's Office (ICO)` - enforces UK GDPR
+- `Securities and Exchange Commission (SEC)` - enforces SOX
+- `State workplace health and safety regulator` - varies by jurisdiction
+
+### 23. Penalty Details
+
+Specific penalty amounts, ranges, or penalty unit references for non-compliance.
+
+**Examples:**
+- `Civil penalty up to 300 penalty units ($93,900 per unit as at 2025-26)`
+- `Administrative fine up to EUR 20 million or 4% of global annual turnover, whichever is higher (GDPR Art. 83(5))`
+- `Infringement notice up to $50,000 per contravention`
+- `Licence condition - breach may result in licence suspension or revocation`
+- `No specific penalty stated - enforced through general compliance powers`
+
+### 24. Transition Period
+
+For phased implementations, which phase this requirement falls into.
+
+**Examples:**
+- `Phase 1: effective 1 July 2026`
+- `Phase 2: effective 1 January 2027 (systems readiness)`
+- `Grandfathered: existing arrangements continue until 1 July 2028`
+- `Immediate: effective on commencement`
+
+### 25. Supersedes
+
+Which previous requirement(s) this replaces or amends.
+
+**Examples:**
+- `Replaces REQ-045 from RTM v1.0 (old Rule 7.3)`
+- `Amends the existing requirement under Section 12(1) of the 2019 Act`
+- `New requirement - no predecessor`
+
+### 26. Related Requirements
+
+Cross-references to other requirements within the same RTM. Different from Dependencies (which is about sequencing). Related Requirements are about subject matter connections.
+
+**Examples:**
+- `Related to REQ-012 (same obligation but for different customer type)`
+- `See also REQ-034 (reporting obligation that depends on this data collection requirement)`
+- `Contradicts REQ-078 - needs human review to determine which takes priority`
+
+### 27. Confidence Score
+
+How confident the extraction is, with reasoning. Pairs with Source Type.
+
+**Values:** `HIGH`, `MEDIUM`, `LOW`
+
+**Examples:**
+- `HIGH - Clear mandatory language ("must"), specific timeframe, unambiguous scope`
+- `MEDIUM - Obligation is clear but scope depends on interpretation of "material change"`
+- `LOW - Derived from a general purpose clause; may not create a standalone obligation. Flagged for legal review`
+
+Use HIGH for clear VERBATIM requirements, MEDIUM for requirements where some interpretation was needed, LOW for DERIVED/ASSUMED requirements where you are not sure the obligation actually exists.
+
+---
+
+## Handling Non-Text Content
+
+Regulatory documents often contain tables, formulas, flowcharts, and diagrams that contain obligations. Don't skip these.
+
+**Tables in regulations:**
+Treat each row of a compliance table as a potential requirement. Fee schedules, penalty tables, reporting matrices, and classification tables all contain obligations. Capture the table title and the specific row/column as the Source Reference (e.g., "Schedule 2, Table 3, Row 5").
+
+**Formulas:**
+When a regulation includes a calculation formula (pricing formulas, penalty calculations, capital adequacy ratios), capture the formula verbatim. In the Plain English Summary, explain what each variable represents and what the formula calculates.
+
+**Flowcharts and decision trees:**
+Extract each decision point and each outcome as separate requirements. The decision conditions become CONDITIONAL requirements. Note that flowcharts in PDFs are often embedded as images and may not be machine-readable. If you cannot read a flowchart, flag it with "Visual flowchart on page X - manual review required".
+
+**Maps and diagrams:**
+If a regulation uses a map to define geographic boundaries (e.g., network service areas) or a diagram to define system architectures, note the existence of the visual element and flag it for manual review. Describe what the map/diagram appears to show based on surrounding text.

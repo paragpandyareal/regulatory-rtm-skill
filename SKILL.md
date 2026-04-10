@@ -45,6 +45,7 @@ Every requirement extracted from a regulatory document should be captured with t
    - **REPORTING** - Requires reporting or disclosure
    - **RECORD KEEPING** - Requires maintaining records
    - **TIMELINE** - Specifies a deadline or timeframe
+   - **ENTITLEMENT** - A right granted to one party that creates a corresponding obligation on another party (e.g., "customers are entitled to receive a bill" creates an obligation on the retailer to provide one)
 9. **Priority** - Based on obligation type and consequences:
    - **CRITICAL** - Non-compliance has severe consequences (penalties, licence risk, safety)
    - **HIGH** - Mandatory requirement with significant impact
@@ -80,8 +81,21 @@ Follow this process when the user provides a regulatory document:
 - Identify what type of document it is (new legislation, amendment, rule change, standard, policy)
 - Note the issuing authority and effective dates
 - Identify who the document applies to (which types of organisations or roles)
+- Read `references/document-types.md` for extraction tips specific to this type of document
 
 ### Step 2: Extract Requirements Systematically
+
+### Pre-scan: Understand the document before extracting
+
+Before you start extracting clause by clause, do a quick scan of the full document:
+
+1. **Read the definitions section first** and build a mental lookup. Defined terms change the meaning of words used throughout the document. A "small customer" might not mean what you think it means
+2. **Identify the scope provisions** - Who does this document apply to? Which types of organisations, roles, or activities?
+3. **Identify commencement and effective date provisions** - When do these obligations start? Are there different dates for different sections?
+4. **Note the document structure** - Is it Parts > Divisions > Sections? Chapters > Rules > Clauses? This affects how you write source references
+5. **Check the document type** and read the relevant section in `references/document-types.md` for type-specific extraction tips
+
+This pre-scan shapes how you interpret every subsequent clause.
 
 **THE #1 RULE: CAPTURE EVERYTHING. DO NOT SKIP ANYTHING.**
 
@@ -100,9 +114,20 @@ It is far better to include a requirement that turns out to be minor than to mis
 - Every reference to penalties, enforcement, or consequences of non-compliance
 - Every exception, exemption, or carve-out (these are just as important as the obligations themselves because they define the boundaries)
 - Every cross-reference to other legislation, rules, or standards (flag these as needing separate review)
+- For amendment documents: both the amendment text AND what it amends. If the amendment says "omit section X, substitute section Y", create a DELETED entry for old X and a NEW entry for new Y
+- For "after paragraph (a) insert (aa)" style amendments: capture the full resulting text as it will read after the amendment takes effect
+- Any references to the existing instrument that the user hasn't provided (flag these as needing the original document for complete analysis)
 - Every governance requirement (board approval, committee oversight, delegation authorities)
 - Every requirement buried in notes, footnotes, explanatory provisions, or schedules
 - Implied requirements that aren't stated with obligation words but are clearly necessary for compliance
+
+**Handling cross-references and regulatory hierarchy:**
+- **"Despite" or "Notwithstanding" clauses** override other provisions. Flag both provisions and note the override relationship
+- **"Subject to" clauses** are subordinate to another provision. Flag both and note which one takes priority
+- **Delegated authority** ("as determined by the Authority", "as specified in guidelines") means additional requirements exist in a separate document. Flag for separate analysis
+- **Incorporation by reference** ("in accordance with [standard]", "as specified in [code]") makes the external document's requirements binding. Flag each referenced document as needing its own RTM analysis
+
+For a comprehensive list of obligation trigger words by category and jurisdiction, read `references/obligation-triggers.md`.
 
 **How to extract:**
 - Go through the document **sequentially, section by section, clause by clause**
@@ -136,6 +161,8 @@ Before presenting the RTM, verify:
 - Business domain assignments make sense
 - No requirements were missed (especially in schedules, appendices, definitions, transitional provisions, footnotes, and explanatory notes)
 - ASSUMED entries clearly explain the reasoning
+- **Extraction density sanity check** - As a loose guide (not a rule): primary legislation typically yields 2-5 requirements per page, detailed rules and standards 5-15 per page, and codes of practice 3-8 per page. If your count is far outside these ranges, re-examine. Some pages legitimately have zero requirements (definitions-only pages, preambles) but if most pages are coming up empty, you are probably missing obligations
+- **Source type distribution** - If more than 20% of your entries are ASSUMED, flag this prominently in the summary. It suggests either the document is incomplete or you are over-interpreting. A healthy distribution for most documents is 70-80% VERBATIM, 15-25% DERIVED, 0-5% INTERPRETED, and under 5% ASSUMED
 - Single clauses with multiple obligations have been split into separate requirements
 - Exceptions and exemptions have been captured as standalone requirements (not just mentioned in passing)
 
@@ -172,13 +199,11 @@ For regulatory documents over 30 pages:
 
 ## Important Warnings
 
-- **CAPTURE EVERYTHING.** This is the most important rule. Do not self-filter. Do not skip clauses because they look administrative, procedural, or unimportant. A requirement that seems trivial to AI could be the exact clause an auditor asks about. Include it and let the human decide what matters. It is always better to have a row in the matrix that turns out to be low priority than to have a gap that turns out to be a compliance breach
-- **Never invent requirements.** If it's not in the document (explicitly or by clear implication), don't include it. If you think something is missing, flag it as ASSUMED and explain your reasoning
-- **Never change verbatim text.** The verbatim column must be an exact copy. If there are typos in the regulation, copy the typos
-- **Always flag uncertainty.** If you're unsure about an interpretation, say so. Add a note like "This clause is ambiguous. The interpretation above assumes X, but it could also mean Y"
-- **Cross-references matter.** If the regulation references another document you haven't been given, flag this as a standalone requirement noting the cross-reference. Don't guess what the referenced document says
-- **Definitions matter.** Regulatory documents often have specific definitions that change the meaning of common words. Always check the definitions section and apply those definitions. If a definition itself creates an obligation or narrows scope in a meaningful way, extract it as a requirement
-- **Don't over-derive.** Be conservative with DERIVED requirements. Only include them when they are clearly and logically necessary to comply with a VERBATIM requirement
-- **Exceptions are requirements too.** An exemption, carve-out, or exception is just as important as the obligation it modifies. If a clause says "except where X applies", that exception needs its own row
-- **Footnotes and explanatory notes can contain obligations.** Don't skip them. Some regulators put critical detail in footnotes or explanatory provisions that look like commentary but actually contain binding requirements
+- **CAPTURE EVERYTHING.** Do not self-filter. A requirement that seems trivial to AI could be the exact clause an auditor asks about. It is always better to have a row that turns out to be low priority than a gap that turns out to be a compliance breach
+- **Never invent requirements.** If it's not in the document (explicitly or by clear implication), don't include it. Flag ASSUMED entries with clear reasoning
+- **Never change verbatim text.** Copy the exact text, including any typos in the regulation
+- **Always flag uncertainty.** If you're unsure about an interpretation, say so. Add a note like "This clause is ambiguous - the interpretation above assumes X, but it could also mean Y"
+- **Cross-references matter.** If the regulation references another document you don't have, flag it as a standalone requirement. Don't guess what the referenced document says
+- **Definitions matter.** Check the definitions section and apply those definitions. If a definition creates or narrows an obligation, extract it as a requirement
+- **Exceptions are requirements too.** An exemption, carve-out, or exception needs its own row because it defines the boundaries of other obligations
 - **If the document is too large to process in one pass, tell the user.** Say which sections you've covered and which are still pending. Never silently skip sections
